@@ -59,14 +59,18 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
         # Step 2 - compute model predictions and loss
         y_pred = model(features)
         loss = lossfunc(y_pred, labels)
-        
+
         # Step 3 - do a backward pass and a gradient update step
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         
+        # Calculate accuracy
+        correct = (torch.round(y_pred) == labels).float().sum()
+        acc = correct / len(labels)
+        
         if epoch % 10 == 0:
-            print ('Epoch [%d/%d], Loss: %.4f' %(epoch+1, num_epoch, loss.item()))
+            print ('Epoch [%d/%d], Accuracy:%.4f, Loss: %.4f' %(epoch+1, num_epoch, acc, loss.item()))
     
     return model, loss.item()
 

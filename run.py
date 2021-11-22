@@ -13,6 +13,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params.TEST_
 
 model = FeedForward(params.HIDDEN_SIZE)
 
-loss_func = nn.MSELoss()
+loss_func_mse = nn.MSELoss()
+loss_func_mae = nn.L1Loss()
 optimizer = torch.optim.SGD(model.parameters(), lr=params.LEARNING_RATE)
-model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func, optimizer, params.NUM_EPOCHS)
+model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_mae, optimizer, params.NUM_EPOCHS)
