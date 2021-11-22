@@ -66,8 +66,6 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
         optimizer.step()
         
         if epoch % 10 == 0:
-            print(y_pred)
-            print(one_hot_to_labels(y_pred.detach().numpy()))
             print ('Epoch [%d/%d], Loss: %.4f' %(epoch+1, num_epoch, loss.item()))
     
     return model, loss.item()
