@@ -1,3 +1,4 @@
+from accuracy import accuracy
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -66,8 +67,7 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
         optimizer.step()
         
         # Calculate accuracy
-        correct = (torch.round(y_pred) == labels).float().sum()
-        acc = correct / len(labels)
+        acc = accuracy(y_pred, labels)
         
         if epoch % 10 == 0:
             print ('Epoch [%d/%d], Accuracy:%.4f, Loss: %.4f' %(epoch+1, num_epoch, acc, loss.item()))
