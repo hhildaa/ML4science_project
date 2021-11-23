@@ -3,7 +3,7 @@ import pandas as pd
 
 # standard accuracy function, counts the correct labels
 def accuracy(y_pred, labels):
-    acc = (labels == y_pred).float().sum() / len(y_pred)
+    acc = (labels == y_pred).sum() / len(y_pred)
     return acc
 
 # These functions are from the original approach
