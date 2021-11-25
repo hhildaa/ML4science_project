@@ -3,6 +3,10 @@ import pandas as pd
 
 # These functions are from the original approach
 
+# Logistic CDF for ordered logit
+def my_logisticcdf(val):
+    return np.exp(val)/(1.0 + np.exp(val))
+
 # Definitions for AMPCA and GMPCA
 def AMPCA(proba, test_set, choice_col):
     sum = 0
