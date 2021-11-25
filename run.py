@@ -6,6 +6,7 @@ import params
 from model import train, FeedForward, labels_to_one_hot
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, cohen_kappa_score
 import numpy as np
+from accuracy import *
 
 ######################################################################################################################
 
@@ -52,17 +53,17 @@ acc = accuracy_score(test_estimation, test_original)
 print(f'\nTest accuracy: {acc}')
 
 dca = sum(test_estimation == test_original) / len(test_original)
-#proba = m1_results[['choice_proba_0', 'choice_proba_1', 'choice_proba_2', 'choice_proba_3', 'choice_proba_4']].to_numpy()
+proba = test_result.detach().numpy()
 qwk = cohen_kappa_score(test_original, test_estimation, weights='quadratic')
 
 ## Discrete Classification Accuracy (DCA)
 print("DCA: {dca:.4f}".format(dca=dca))
 
 ## Arithmetic Mean Probability of Correct Assignment (AMPCA)
-#print("AMPCA: {ampca:.4f}".format(ampca=AMPCA(proba, test_df, 'severity')))
+print("AMPCA: {ampca:.4f}".format(ampca=AMPCA(proba, y_test)))
 
 ## Geometric Mean Probability of Correct Assignment (GMPCA)
-#print("GMPCA: {gmpca:.4f}".format(gmpca=GMPCA(proba, test_df, 'severity')))
+print("GMPCA: {gmpca:.4f}".format(gmpca=GMPCA(proba, y_test)))
 
 # Quadratic Weighted Kappa (QWK)
 print("QWK: {qwk:.4f}".format(qwk=qwk))

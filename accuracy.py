@@ -3,72 +3,27 @@ import pandas as pd
 
 # These functions are from the original approach
 
-# Logistic CDF for ordered logit
-def my_logisticcdf(val):
-    return np.exp(val)/(1.0 + np.exp(val))
-
 # Definitions for AMPCA and GMPCA
-def AMPCA(proba, test_set, choice_col):
+
+def AMPCA(proba, y):
     sum = 0
     i = 0
-    for sel_mode in test_set[choice_col].values:
-        sum = sum + proba[i,sel_mode]
+    for sel_mode in y:
+        sum = sum + proba[i, sel_mode]
         i += 1
     N = i-1
     return sum/N
 
-def CEL(proba, test_set, choice_col):
+# TODO: deal with the zero devision
+
+def CEL(proba, y):
     sum = 0
     i = 0
-    for sel_mode in test_set[choice_col].values:
-        sum = sum + np.log(proba[i,sel_mode])
+    for sel_mode in y:
+        sum = sum + np.log(proba[i, sel_mode])
         i += 1
     N = i-1
     return -sum/N
 
-def GMPCA(proba, test_set, choice_col):
-    return np.exp(-CEL(proba, test_set, choice_col))
-
-# Quadratic weighted kappa metric
-def QWK(confusion_matrix, actual, predicted_vector, pred=None):
-    N = len(confusion_matrix)
-    print("confusion matrix:")
-    print(pd.DataFrame(confusion_matrix).round(2))
-    
-    w = np.zeros((N, N))
-    for i in range(len(w)):
-        for j in range(len(w)):
-            w[i][j] = float(((i-j)**2)/16)
-    print('weights matrix:')
-    print(w)
-    
-    act_hist=np.zeros([N])
-    for item in actual:
-        act_hist[item]+=1
-    print("Actual histogram")
-    print(act_hist)
-    
-    if pred is None:
-        pred_hist = predicted_vector.sum(axis=0)
-    print("Predicted histogram")
-    print(pred_hist)
-    
-    E = np.outer(act_hist, pred_hist)
-    E = E/E.sum() # normalize E
-    print('Expected matrix (normalized):')
-    print(pd.DataFrame(E))
-
-    cm_norm = confusion_matrix/confusion_matrix.sum()
-    print('Confusion matrix (normalized):')
-    print(pd.DataFrame(cm_norm))
-    
-    num=0
-    den=0
-    for i in range(len(w)):
-        for j in range(len(w)):
-            num+=w[i][j]*cm_norm[i][j]
-            den+=w[i][j]*E[i][j]
-
-    weighted_kappa = (1 - (num/den))
-    print('weighted kappa:')
-    return weighted_kappa
+def GMPCA(proba, y):
+    return np.exp(-CEL(proba, y))
