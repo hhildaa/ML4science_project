@@ -4,7 +4,8 @@ import torch.nn as nn
 from sklearn.model_selection import train_test_split
 import params
 from model import train, FeedForward, labels_to_one_hot
-from accuracy import *
+from sklearn.metrics import accuracy_score
+import numpy as np
 
 # Reading the data
 
@@ -26,5 +27,5 @@ model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_fu
 # Testing on test data
 
 test_result = model(torch.from_numpy(X_test.to_numpy()).float())
-acc = accuracy(test_result, y_test)
+acc = accuracy_score(np.argmax(test_result.detach().numpy(), axis=1), y_test.to_numpy())
 print(f'Test accuracy: {acc}')

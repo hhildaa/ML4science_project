@@ -1,10 +1,11 @@
-from accuracy import accuracy
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 import params
 import numpy as np
+from sklearn.metrics import accuracy_score
+
 
 def one_hot_to_labels(predictions):
     """
@@ -67,7 +68,7 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
         optimizer.step()
         
         # Calculate accuracy
-        acc = accuracy(y_pred, labels)
+        acc = accuracy_score(np.argmax(y_pred.detach().numpy(), axis=1), np.argmax(labels.detach().numpy(), axis=1))
         
         if epoch % 10 == 0:
             print ('Epoch [%d/%d], Accuracy:%.4f, Loss: %.4f' %(epoch+1, num_epoch, acc, loss.item()))
@@ -84,5 +85,6 @@ class FeedForward(nn.Module):
     def forward(self, x):
         y = self.fc1(x)
         y = self.fc2(y)
-        y = F.sigmoid(y)
-        return self.fc3(y)
+        y = self.fc3(y)
+        y = F.softmax(y, dim=0)
+        return y

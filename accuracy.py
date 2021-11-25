@@ -1,11 +1,6 @@
 import numpy as np
 import pandas as pd
 
-# standard accuracy function, counts the correct labels
-def accuracy(y_pred, labels):
-    acc = (labels == y_pred).sum() / len(y_pred)
-    return acc
-
 # These functions are from the original approach
 
 # Definitions for AMPCA and GMPCA
