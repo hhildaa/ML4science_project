@@ -12,9 +12,13 @@ from accuracy import *
 
 # Reading the data
 
-input_data = pd.read_csv('dataset/tempe_cleaneddata.csv', sep='\t')
+if params.PREPROCESS:
+    input_data = pd.read_csv('dataset/preprocessed_data.csv', sep='\t', index_col=0)
+else:
+    input_data = pd.read_csv('dataset/tempe_cleaneddata.csv', sep='\t', index_col=0)
 
 X, y = input_data.drop(columns=['severity']), input_data['severity']
+print(X.head())
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params.TEST_FRACTION)
 
@@ -26,14 +30,15 @@ model = FeedForward(params.HIDDEN_SIZE)
 
 loss_func_mse = nn.MSELoss()
 loss_func_mae = nn.L1Loss()
-optimizer = torch.optim.SGD(model.parameters(), lr=params.LEARNING_RATE)
-model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_mae, optimizer, params.NUM_EPOCHS)
+loss_func_cross_entropy = nn.CrossEntropyLoss(weight=torch.FloatTensor([1,1,1,1,1]))
+optimizer = torch.optim.Adam(model.parameters(), lr=params.LEARNING_RATE)
+model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
 
 ######################################################################################################################
 
 # Testing on test data
 
-test_result = model(torch.from_numpy(X_test.to_numpy()).float())
+test_result = model.forward(torch.from_numpy(X_test.to_numpy()).float())
 
 # Convert to numpy
 

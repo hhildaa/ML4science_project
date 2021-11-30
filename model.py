@@ -55,11 +55,15 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
     """
     # Step 1 - create torch variables corresponding to features and labels
     features = torch.from_numpy(features).float()
-    labels = torch.from_numpy(labels_to_one_hot(labels)).float()
+    if isinstance(lossfunc,nn.CrossEntropyLoss):
+        # cross entropy loss takes class labels instead of one-hot as target labels
+        labels = torch.from_numpy(labels)
+    else:
+        labels = torch.from_numpy(labels_to_one_hot(labels)).float()
     
     for epoch in range(num_epoch):
         # Step 2 - compute model predictions and loss
-        y_pred = model(features)
+        y_pred = model.forward(features)
         loss = lossfunc(y_pred, labels)
 
         # Step 3 - do a backward pass and a gradient update step
@@ -68,7 +72,11 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
         optimizer.step()
         
         # Calculate accuracy
-        acc = accuracy_score(np.argmax(y_pred.detach().numpy(), axis=1), np.argmax(labels.detach().numpy(), axis=1))
+        if isinstance(lossfunc,nn.CrossEntropyLoss):
+            # cross entropy loss takes class labels instead of one-hot as target labels
+            acc = accuracy_score(np.argmax(y_pred.detach().numpy(), axis=1), labels.detach().numpy())
+        else:
+            acc = accuracy_score(np.argmax(y_pred.detach().numpy(), axis=1), np.argmax(labels.detach().numpy(), axis=1))
         
         if epoch % 10 == 0:
             print ('Epoch [%d/%d], Accuracy:%.4f, Loss: %.4f' %(epoch+1, num_epoch, acc, loss.item()))
@@ -85,6 +93,7 @@ class FeedForward(nn.Module):
     def forward(self, x):
         y = self.fc1(x)
         y = self.fc2(y)
+        y = F.relu(y)
         y = self.fc3(y)
         y = F.softmax(y, dim=0)
         return y
