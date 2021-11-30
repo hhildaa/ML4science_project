@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 # These functions are from the original approach
 
@@ -12,9 +11,8 @@ def AMPCA(proba, y):
         sum = sum + proba[i, sel_mode]
         i += 1
     N = i-1
+    if i== 0: return 
     return sum/N
-
-# TODO: deal with the zero devision
 
 def CEL(proba, y):
     sum = 0
