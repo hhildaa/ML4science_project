@@ -1,5 +1,6 @@
 import pandas as pd
 import torch
+import random
 import torch.nn as nn
 from sklearn.model_selection import train_test_split
 import params
@@ -7,6 +8,13 @@ from model import train, FeedForward, labels_to_one_hot
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, cohen_kappa_score
 import numpy as np
 from accuracy import *
+
+######################################################################################################################
+
+# set random seed for REPRODUCIBILITY
+torch.manual_seed(params.SEED)
+np.random.seed(params.SEED)
+random.seed(params.SEED)
 
 ######################################################################################################################
 
@@ -38,11 +46,13 @@ model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_fu
 
 # Testing on test data
 
+train_result = model.forward(torch.from_numpy(X_train.to_numpy()).float())
 test_result = model.forward(torch.from_numpy(X_test.to_numpy()).float())
 
 # Convert to numpy
-
+train_estimation = np.argmax(train_result.detach().numpy(), axis=1)
 test_estimation = np.argmax(test_result.detach().numpy(), axis=1)
+train_original = y_train.to_numpy()
 test_original = y_test.to_numpy()
 
 # Print results
@@ -54,7 +64,9 @@ print(classification_report(test_original, test_estimation, target_names=target_
 print('\nConfusion matrix')
 print(confusion_matrix(test_original, test_estimation))
 
+train_acc = accuracy_score(train_estimation, train_original)
 acc = accuracy_score(test_estimation, test_original)
+print(f'\nTrain accuracy: {train_acc}')
 print(f'\nTest accuracy: {acc}')
 
 dca = sum(test_estimation == test_original) / len(test_original)
