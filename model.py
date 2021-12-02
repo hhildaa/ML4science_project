@@ -63,7 +63,8 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
     
     for epoch in range(num_epoch):
         # Step 2 - compute model predictions and loss
-        y_pred = model.forward(features)
+        y_pred_dist = model.forward(features)
+        y_pred = F.softmax(y_pred_dist, dim=0)
         loss = lossfunc(y_pred, labels)
 
         # Step 3 - do a backward pass and a gradient update step
@@ -95,5 +96,6 @@ class FeedForward(nn.Module):
         y = self.fc2(y)
         y = F.relu(y)
         y = self.fc3(y)
-        y = F.softmax(y, dim=0)
+        y = torch.sigmoid(y)
+        #y = F.softmax(y, dim=0)
         return y
