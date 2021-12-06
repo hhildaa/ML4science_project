@@ -54,7 +54,7 @@ print(X_train.head())
 
 # Training on train data
 
-model = FeedForward(params.HIDDEN_SIZE)
+model = FeedForward(params.HIDDEN_SIZE, params.PMF_LAYER, params.PMF_TYPE)
 
 # Loss functions
 loss_func_mse = nn.MSELoss()

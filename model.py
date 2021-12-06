@@ -88,19 +88,19 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
 
 class PMFLayer(nn.Module):
     def __init__(self, pmf='Poisson', K=5):
-        super(self).__init__()
+        super(PMFLayer, self).__init__()
         self.K = K
-        self.index_tensor = torch.transpose(torch.FloatTensor([i for i in range(1, K+1)], 0, 1))
+        self.index_tensor = torch.FloatTensor([i for i in range(1, K+1)])
         self.pmf = pmf
         if pmf == 'Poisson':
-            self.log_index_faculty = torch.transpose(torch.FloatTensor([log(factorial(i)) for i in range(1, K+1)], 0, 1))
+            self.log_index_faculty = torch.FloatTensor([log(factorial(i)) for i in range(1, K+1)])
         elif pmf == 'Bernoulli':
             pass
         else:
             raise ValueError('PMFLayer got invalid pmf: {} (expected one of "Poisson", "Bernoulli")'.format(pmf))
 
     def forward(self, x):
-        y = torch.cat([x for _ in range(self.K)], 0) # copy layer
+        y = torch.cat([x for _ in range(self.K)], 1) # copy layer
         if self.pmf == 'Poisson':
             y = (self.index_tensor * torch.log(y))- y - self.log_index_faculty
             return y
