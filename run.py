@@ -25,10 +25,30 @@ if params.PREPROCESS:
 else:
     input_data = pd.read_csv('dataset/tempe_cleaneddata.csv', sep='\t', index_col=0)
 
-X, y = input_data.drop(columns=['severity']), input_data['severity']
-print(X.head())
+#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params.TEST_FRACTION)
+train_df = input_data.sample(frac=0.8, random_state=100)
+test_df = pd.concat([input_data, train_df, train_df]).drop_duplicates(keep=False)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params.TEST_FRACTION)
+# upsampling minority classes
+if params.UPSAMPLING:
+    class_values = list(train_df['severity'].unique())
+    class_lens = [train_df[train_df['severity'] == class_val].shape[0] for class_val in class_values]
+    max_len = max(class_lens)
+
+    for class_val in class_values:
+        class_df = train_df[train_df['severity'] == class_val]
+        if class_df.shape[0] < max_len:
+            to_add = class_df.sample(max_len - class_df.shape[0], replace=True)
+            train_df = pd.concat([train_df, to_add], axis=0)
+    
+    # mix randomly
+    train_df = train_df.sample(frac=1)
+    print(train_df['severity'].value_counts())
+
+X_train, y_train = train_df.drop(columns=['severity']), train_df['severity']
+X_test, y_test = test_df.drop(columns=['severity']), test_df['severity']
+
+print(X_train.head())
 
 ######################################################################################################################
 

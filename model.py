@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import params
 import numpy as np
 from sklearn.metrics import accuracy_score
+from math import factorial, log
 
 
 def one_hot_to_labels(predictions):
@@ -66,6 +67,7 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
         y_pred_dist = model.forward(features)
         y_pred = F.softmax(y_pred_dist, dim=0)
         loss = lossfunc(y_pred, labels)
+        curr_loss = loss.item()
 
         # Step 3 - do a backward pass and a gradient update step
         optimizer.zero_grad()
@@ -80,22 +82,53 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
             acc = accuracy_score(np.argmax(y_pred.detach().numpy(), axis=1), np.argmax(labels.detach().numpy(), axis=1))
         
         if epoch % 10 == 0:
-            print ('Epoch [%d/%d], Accuracy:%.4f, Loss: %.4f' %(epoch+1, num_epoch, acc, loss.item()))
+            print ('Epoch [%d/%d], Accuracy:%.4f, Loss: %.4f' %(epoch+1, num_epoch, acc, curr_loss))
     
     return model, loss.item()
 
+class PMFLayer(nn.Module):
+    def __init__(self, pmf='Poisson', K=5):
+        super(self).__init__()
+        self.K = K
+        self.index_tensor = torch.transpose(torch.FloatTensor([i for i in range(1, K+1)], 0, 1))
+        self.pmf = pmf
+        if pmf == 'Poisson':
+            self.log_index_faculty = torch.transpose(torch.FloatTensor([log(factorial(i)) for i in range(1, K+1)], 0, 1))
+        elif pmf == 'Bernoulli':
+            pass
+        else:
+            raise ValueError('PMFLayer got invalid pmf: {} (expected one of "Poisson", "Bernoulli")'.format(pmf))
+
+    def forward(self, x):
+        y = torch.cat([x for _ in range(self.K)], 0) # copy layer
+        if self.pmf == 'Poisson':
+            y = (self.index_tensor * torch.log(y))- y - self.log_index_faculty
+            return y
+
+
 class FeedForward(nn.Module):
-    def __init__(self, hidden_size):
+    def __init__(self, hidden_size, pmf_layer=False, pmf='Poisson'):
         super(FeedForward, self).__init__()
         self.fc1 = nn.Linear(params.INPUT_SIZE, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, params.OUTPUT_SIZE)
+        self.pmf_layer = pmf_layer
+        if pmf_layer:
+            self.fc3 = nn.Linear(hidden_size, 1)
+            self.pmf = PMFLayer(pmf=pmf, K=params.OUTPUT_SIZE)
+        else:
+            self.fc3 = nn.Linear(hidden_size, params.OUTPUT_SIZE)
+            
     
     def forward(self, x):
         y = self.fc1(x)
         y = self.fc2(y)
         y = F.relu(y)
         y = self.fc3(y)
-        y = torch.sigmoid(y)
+
+        if self.pmf_layer:
+            y = F.softplus(y)
+            y = self.pmf(y)
+        else:
+            y = torch.sigmoid(y)
         #y = F.softmax(y, dim=0)
         return y
