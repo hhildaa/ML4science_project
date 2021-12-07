@@ -68,13 +68,15 @@ model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_fu
 
 # Testing on test data
 
-train_result = model.forward(torch.from_numpy(X_train.to_numpy()).float())
+train_result_dist = model.forward(torch.from_numpy(X_train.to_numpy()).float())
 test_result_dist = model.forward(torch.from_numpy(X_test.to_numpy()).float())
+train_result = torch.softmax(train_result_dist, dim=0)
 test_result = torch.softmax(test_result_dist, dim=0)
 
 # Convert to numpy
-train_estimation = np.argmax(train_result.detach().numpy(), axis=1)
+train_estimation_dist = np.argmax(train_result_dist.detach().numpy(), axis=1)
 test_estimation_dist = np.argmax(test_result_dist.detach().numpy(), axis=1)
+train_estimation = np.argmax(train_result.detach().numpy(), axis=1)
 test_estimation = np.argmax(test_result.detach().numpy(), axis=1)
 train_original = y_train.to_numpy()
 test_original = y_test.to_numpy()
