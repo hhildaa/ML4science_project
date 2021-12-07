@@ -8,6 +8,7 @@ from model import train, FeedForward, labels_to_one_hot
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, cohen_kappa_score
 import numpy as np
 from accuracy import *
+#from imblearn.over_sampling import SMOTENC
 
 ######################################################################################################################
 
@@ -31,21 +32,33 @@ test_df = pd.concat([input_data, train_df, train_df]).drop_duplicates(keep=False
 
 # upsampling minority classes
 if params.UPSAMPLING:
-    class_values = list(train_df['severity'].unique())
-    class_lens = [train_df[train_df['severity'] == class_val].shape[0] for class_val in class_values]
-    max_len = max(class_lens)
+    if params.UPSAMPLING_TYPE == "SMOTE":
+        X_train, y_train = train_df.drop(columns=['severity']), train_df['severity']
 
-    for class_val in class_values:
-        class_df = train_df[train_df['severity'] == class_val]
-        if class_df.shape[0] < max_len:
-            to_add = class_df.sample(max_len - class_df.shape[0], replace=True)
-            train_df = pd.concat([train_df, to_add], axis=0)
-    
-    # mix randomly
-    train_df = train_df.sample(frac=1)
-    print(train_df['severity'].value_counts())
+        categorical_features = range(2,34)
+        smote_nc = SMOTENC(categorical_features=categorical_features, random_state=100)
+        X_train, y_train = smote_nc.fit_resample(X_train, y_train)
+    elif params.UPSAMPLING_TYPE == "random":
+        class_values = list(train_df['severity'].unique())
+        class_lens = [train_df[train_df['severity'] == class_val].shape[0] for class_val in class_values]
+        max_len = max(class_lens)
 
-X_train, y_train = train_df.drop(columns=['severity']), train_df['severity']
+        for class_val in class_values:
+            class_df = train_df[train_df['severity'] == class_val]
+            if class_df.shape[0] < max_len:
+                to_add = class_df.sample(max_len - class_df.shape[0], replace=True)
+                train_df = pd.concat([train_df, to_add], axis=0)
+
+        # mix randomly
+        train_df = train_df.sample(frac=1)
+        print(train_df['severity'].value_counts())
+        
+        X_train, y_train = train_df.drop(columns=['severity']), train_df['severity']
+    else:
+        raise ValueError('Wrong upsampling type selected')
+else:
+    X_train, y_train = train_df.drop(columns=['severity']), train_df['severity']
+ 
 X_test, y_test = test_df.drop(columns=['severity']), test_df['severity']
 
 print(X_train.head())

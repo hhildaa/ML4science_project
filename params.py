@@ -5,6 +5,8 @@ SEED = 100
 ### PREPROCESS DATA YES/NO
 PREPROCESS = True
 UPSAMPLING = True
+# Upsampling type - random or SMOTE
+UPSAMPLING_TYPE = "random" 
 
 ### SIZE OF TRAIN-TEST-SPLIT
 TEST_FRACTION = .2
