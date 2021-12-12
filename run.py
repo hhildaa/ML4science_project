@@ -8,6 +8,7 @@ from model import train, FeedForward, labels_to_one_hot
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, cohen_kappa_score
 import numpy as np
 from accuracy import *
+from cross_validation import *
 #from imblearn.over_sampling import SMOTENC
 
 ######################################################################################################################
@@ -75,51 +76,12 @@ loss_func_mae = nn.L1Loss()
 loss_func_cross_entropy = nn.CrossEntropyLoss(weight=torch.FloatTensor([1,1,1,1,1]))
 
 optimizer = torch.optim.Adam(model.parameters(), lr=params.LEARNING_RATE)
-model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
+#model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
+
+best_accuracy = k_fold_cross_validation(y_train, X_train, params.K_FOLDS, model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
 
 ######################################################################################################################
 
 # Testing on test data
 
-train_result_dist = model.forward(torch.from_numpy(X_train.to_numpy()).float())
-test_result_dist = model.forward(torch.from_numpy(X_test.to_numpy()).float())
-train_result = torch.softmax(train_result_dist, dim=0)
-test_result = torch.softmax(test_result_dist, dim=0)
-
-# Convert to numpy
-train_estimation_dist = np.argmax(train_result_dist.detach().numpy(), axis=1)
-test_estimation_dist = np.argmax(test_result_dist.detach().numpy(), axis=1)
-train_estimation = np.argmax(train_result.detach().numpy(), axis=1)
-test_estimation = np.argmax(test_result.detach().numpy(), axis=1)
-train_original = y_train.to_numpy()
-test_original = y_test.to_numpy()
-
-# Print results
-
-print('\nClassification report')
-target_names = ['No injury', 'Possible injury', 'Non-incapacitating (minor) injury', 'incapacitating (major) injury', 'fatal injury']
-print(classification_report(test_original, test_estimation, target_names=target_names))
-
-print('\nConfusion matrix')
-print(confusion_matrix(test_original, test_estimation))
-
-train_acc = accuracy_score(train_estimation, train_original)
-acc = accuracy_score(test_estimation, test_original)
-print(f'\nTrain accuracy: {train_acc}')
-print(f'\nTest accuracy: {acc}')
-
-dca = sum(test_estimation == test_original) / len(test_original)
-proba = test_result_dist.detach().numpy()
-qwk = cohen_kappa_score(test_original, test_estimation, weights='quadratic')
-
-## Discrete Classification Accuracy (DCA)
-print("DCA: {dca:.4f}".format(dca=dca))
-
-## Arithmetic Mean Probability of Correct Assignment (AMPCA)
-print("AMPCA: {ampca:.4f}".format(ampca=AMPCA(proba, y_test)))
-
-## Geometric Mean Probability of Correct Assignment (GMPCA)
-print("GMPCA: {gmpca:.4f}".format(gmpca=GMPCA(proba, y_test)))
-
-# Quadratic Weighted Kappa (QWK)
-print("QWK: {qwk:.4f}".format(qwk=qwk))
+#test_estimation, train_acc, acc, dca, ampca, gmpca, qwk = test(model, X_train, y_train, X_test, y_test, True)
