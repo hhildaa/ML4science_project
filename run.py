@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 import params
 from model import train, FeedForward, labels_to_one_hot
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, cohen_kappa_score
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.svm import SVC
 import numpy as np
 from accuracy import *
 from cross_validation import *
@@ -23,7 +25,7 @@ random.seed(params.SEED)
 # Reading the data
 
 if params.PREPROCESS and params.BIN_AGES:
-    input_data = pd.read_csv('dataset/age_binned_preprocessed.csv', sep='\t')
+    input_data = pd.read_csv('dataset/age_binned_preprocessed.csv', sep='\t', index_col=0)
 elif params.PREPROCESS:
     input_data = pd.read_csv('dataset/preprocessed_data.csv', sep='\t', index_col=0)
 elif params.BIN_AGES:
@@ -71,18 +73,36 @@ print(X_train.head())
 ######################################################################################################################
 
 # Training on train data
+if params.MODEL_TYPE == 'FeedForward':
+    model = FeedForward(params.HIDDEN_SIZE, params.PMF_LAYER, params.PMF_TYPE)
 
-model = FeedForward(params.HIDDEN_SIZE, params.PMF_LAYER, params.PMF_TYPE)
+    # Loss functions
+    loss_func_mse = nn.MSELoss()
+    loss_func_mae = nn.L1Loss()
+    loss_func_cross_entropy = nn.CrossEntropyLoss(weight=torch.FloatTensor([1,1,1,1,1]))
 
-# Loss functions
-loss_func_mse = nn.MSELoss()
-loss_func_mae = nn.L1Loss()
-loss_func_cross_entropy = nn.CrossEntropyLoss(weight=torch.FloatTensor([1,1,1,1,1]))
+    optimizer = torch.optim.Adam(model.parameters(), lr=params.LEARNING_RATE)
+    #model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=params.LEARNING_RATE)
-#model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
+    best_accuracy = k_fold_cross_validation(y_train, X_train, params.K_FOLDS, model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
 
-best_accuracy = k_fold_cross_validation(y_train, X_train, params.K_FOLDS, model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
+elif params.MODEL_TYPE == 'LinearRegression':
+    model = LinearRegression()
+    model = model.fit(X_train, y_train)
+    
+    y_pred = np.round_(model.predict(X_test))
+
+    print(y_pred)
+    print(accuracy_score(y_test, y_pred))
+
+elif params.MODEL_TYPE == 'SVC':
+    model = SVC()
+    model = model.fit(X_train, y_train)
+
+    y_pred = np.round_(model.predict(X_test))
+
+    print(y_pred)
+    print(accuracy_score(y_test, y_pred))
 
 ######################################################################################################################
 

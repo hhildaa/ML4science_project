@@ -16,6 +16,7 @@ TEST_FRACTION = .2
 K_FOLDS = 5
 
 ## SIZE (no. of features) OF INPUT AND OUTPUT
+MODEL_TYPE = 'SVC' # ('LinearRegression', 'FeedForward', 'SVC)
 if PREPROCESS:
     INPUT_SIZE = 34
 else:

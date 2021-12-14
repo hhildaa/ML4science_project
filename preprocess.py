@@ -5,7 +5,7 @@ input_data = pd.read_csv('dataset/tempe_cleaneddata.csv', sep='\t', index_col=0)
 cats, bins = pd.cut(input_data['age'], bins=[-1,1] + [x for x in range(25,95,10)], retbins=True)
 dummies = pd.get_dummies(cats, prefix='age')
 
-age_binned = pd.concat([input_data.drop(columns=['age']), cats], axis=1)
+age_binned = pd.concat([input_data.drop(columns=['age']), dummies], axis=1)
 
 age_binned.to_csv('dataset/age_binned.csv', sep='\t')
 

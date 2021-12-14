@@ -6,6 +6,7 @@ import params
 import numpy as np
 from sklearn.metrics import accuracy_score
 from math import factorial, log
+from sklearn.linear_model import LinearRegression
 
 
 def one_hot_to_labels(predictions):
