@@ -4,6 +4,7 @@ SEED = 100
 
 ### PREPROCESS DATA YES/NO
 PREPROCESS = True
+BIN_AGES = True
 UPSAMPLING = True
 # Upsampling type - random or SMOTE
 UPSAMPLING_TYPE = "random" 

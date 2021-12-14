@@ -22,8 +22,12 @@ random.seed(params.SEED)
 
 # Reading the data
 
-if params.PREPROCESS:
+if params.PREPROCESS and params.BIN_AGES:
+    input_data = pd.read_csv('dataset/age_binned_preprocessed.csv', sep='\t')
+elif params.PREPROCESS:
     input_data = pd.read_csv('dataset/preprocessed_data.csv', sep='\t', index_col=0)
+elif params.BIN_AGES:
+    input_data = pd.read_csv('dataset/age_binned.csv', sep='\t', index_col=0)
 else:
     input_data = pd.read_csv('dataset/tempe_cleaneddata.csv', sep='\t', index_col=0)
 
