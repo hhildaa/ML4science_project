@@ -33,13 +33,9 @@ elif params.BIN_AGES:
 else:
     input_data = pd.read_csv('dataset/tempe_cleaneddata.csv', sep='\t', index_col=0)
 
-print(input_data.shape)
 #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params.TEST_FRACTION)
 train_df = input_data.sample(frac=0.8, random_state=100)
-#test_df = pd.concat([input_data, train_df, train_df]).drop_duplicates(keep=False)
-test_indices = set(input_data.index) - set(train_df.index)
-test_df = input_data.loc[test_indices, :]
-print(test_df.shape)
+test_df = pd.concat([input_data, train_df, train_df]).drop_duplicates(keep=False)
 
 # upsampling minority classes
 if params.UPSAMPLING:
@@ -75,58 +71,50 @@ X_test, y_test = test_df.drop(columns=['severity']), test_df['severity']
 print(X_train.head())
 
 ######################################################################################################################
+top_accuracy = -1
+top_params = None
+for hidden_size in params.GRID_SEARCH_PARAMS['hidden_sizes']:
+    for learning_rate in params.GRID_SEARCH_PARAMS['learning_rates']:
+        for num_epochs in params.GRID_SEARCH_PARAMS['epochs']:
+            # Training on train data
+            if params.MODEL_TYPE == 'FeedForward':
+                model = FeedForward(hidden_size, params.PMF_LAYER, params.PMF_TYPE)
 
-# Training on train data
-if params.MODEL_TYPE == 'FeedForward':
-    # Loss functions
-    loss_func_mse = nn.MSELoss()
-    loss_func_mae = nn.L1Loss()
-    loss_func_cross_entropy = nn.CrossEntropyLoss(weight=torch.FloatTensor([1,1,1,1,1]))
+                # Loss functions
+                loss_func_mse = nn.MSELoss()
+                loss_func_mae = nn.L1Loss()
+                loss_func_cross_entropy = nn.CrossEntropyLoss(weight=torch.FloatTensor([1,1,1,1,1]))
 
-    #model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
+                optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+                #model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
 
-    if params.CROSS_VALIDATION:
-        accuracies, dcas, ampcas, gmpcas, qwks = k_fold_cross_validation(y_train, X_train, params.K_FOLDS, loss_func_mse, params.LEARNING_RATE, params.NUM_EPOCHS, params.HIDDEN_SIZE)
+                best_accuracy, cur_acc_test, dcas, ampcas, gmpcas, qwks = k_fold_cross_validation(y_train, X_train, params.K_FOLDS, model, loss_func_cross_entropy, optimizer, num_epochs, hidden_size)
+                if best_accuracy > top_accuracy:
+                    top_accuracy = best_accuracy
+                    top_params = (hidden_size, learning_rate, num_epochs)
 
-    model = FeedForward(params.HIDDEN_SIZE, params.PMF_LAYER, params.PMF_TYPE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=params.LEARNING_RATE)
-    model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
-    test_estimation, train_acc, acc, dca, ampca, gmpca, qwk = test(model, torch.from_numpy(X_train.to_numpy()), torch.from_numpy(y_train.to_numpy()), torch.from_numpy(X_test.to_numpy()), torch.from_numpy(y_test.to_numpy()), True)
+            elif params.MODEL_TYPE == 'LinearRegression':
+                model = LinearRegression()
+                model = model.fit(X_train, y_train)
+                
+                y_pred = np.round_(model.predict(X_test))
 
-    print('========================================================')
-    if params.CROSS_VALIDATION:
-        print('Accuracy: {}, Confidence Interval: ({},{})'.format(acc, min(accuracies), max(accuracies)))
-        print('DCA: {}, Confidence Interval: ({},{})'.format(dca, min(dcas), max(dcas)))
-        print('AMPCA: {}, Confidence Interval: ({},{})'.format(ampca, min(ampcas), max(ampcas)))
-        print('GMPCA: {}, Confidence Interval: ({},{})'.format(gmpca, min(gmpcas), max(gmpcas)))
-        print('QWK: {}, Confidence Interval: ({},{})'.format(qwk, min(qwks), max(qwks)))
-    else:
-        print('Accuracy: {}'.format(acc))
-        print('DCA: {}'.format(dca))
-        print('AMPCA: {}'.format(ampca))
-        print('GMPCA: {}'.format(gmpca))
-        print('QWK: {}'.format(qwk))
+                print(y_pred)
+                print(accuracy_score(y_test, y_pred))
 
-elif params.MODEL_TYPE == 'LinearRegression':
-    model = LinearRegression()
-    model = model.fit(X_train, y_train)
-    
-    y_pred = np.round_(model.predict(X_test))
+            elif params.MODEL_TYPE == 'SVC':
+                model = SVC()
+                model = model.fit(X_train, y_train)
 
-    print(y_pred)
-    print(accuracy_score(y_test, y_pred))
+                y_pred = np.round_(model.predict(X_test))
 
-elif params.MODEL_TYPE == 'SVC':
-    model = SVC()
-    model = model.fit(X_train, y_train)
+                print(y_pred)
+                print(accuracy_score(y_test, y_pred))
 
-    y_pred = np.round_(model.predict(X_test))
-
-    print(y_pred)
-    print(accuracy_score(y_test, y_pred))
+print(top_params, top_accuracy)
 
 ######################################################################################################################
 
 # Testing on test data
 
-#test_estimation, train_acc, acc, dca, ampca, gmpca, qwk = test(model, X_train, y_train, X_test, y_test, True)
+#test_estimation, train_acc, acc, dca, ampca, gmpca, qwk = test(model, X_train, y_tr

@@ -65,8 +65,8 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
     
     for epoch in range(num_epoch):
         # Step 2 - compute model predictions and loss
-        y_pred_dist = model.forward(features)
-        y_pred = F.softmax(y_pred_dist, dim=0)
+        y_pred = model.forward(features)
+        #y_pred = F.softmax(y_pred_dist, dim=1)
         loss = lossfunc(y_pred, labels)
         curr_loss = loss.item()
 
@@ -131,5 +131,5 @@ class FeedForward(nn.Module):
             y = self.pmf(y)
         else:
             y = torch.sigmoid(y)
-        #y = F.softmax(y, dim=0)
+        y = F.softmax(y, dim=1)
         return y

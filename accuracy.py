@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, cohen_kappa_score
 
 # Definitions for AMPCA and GMPCA
@@ -26,17 +27,17 @@ def CEL(proba, y):
 def GMPCA(proba, y):
     return np.exp(-CEL(proba, y))
 
-def test(model, X_train, y_train, X_test, y_test, print=False):
+def test(model, X_train, y_train, X_test, y_test, print_results=False):
 
     # Testing on test data
-    train_result_dist = model.forward(torch.from_numpy(X_train.numpy()).float())
-    test_result_dist = model.forward(torch.from_numpy(X_test.numpy()).float())
-    train_result = torch.softmax(train_result_dist, dim=0)
-    test_result = torch.softmax(test_result_dist, dim=0)
+    train_result = model.forward(torch.from_numpy(X_train.numpy()).float())
+    test_result = model.forward(torch.from_numpy(X_test.numpy()).float())
+    #train_result = torch.softmax(train_result_dist, dim=1)
+    #test_result = torch.softmax(test_result_dist, dim=1)
 
     # Convert to numpy
-    train_estimation_dist = np.argmax(train_result_dist.detach().numpy(), axis=1)
-    test_estimation_dist = np.argmax(test_result_dist.detach().numpy(), axis=1)
+    train_estimation_dist = np.argmax(train_result.detach().numpy(), axis=1)
+    test_estimation_dist = np.argmax(test_result.detach().numpy(), axis=1)
     train_estimation = np.argmax(train_result.detach().numpy(), axis=1)
     test_estimation = np.argmax(test_result.detach().numpy(), axis=1)
     train_original = y_train.numpy()
@@ -47,22 +48,25 @@ def test(model, X_train, y_train, X_test, y_test, print=False):
     acc = accuracy_score(test_estimation, test_original)
 
     dca = sum(test_estimation == test_original) / len(test_original)
-    proba = test_result_dist.detach().numpy()
+    proba = test_result.detach().numpy()
+    print(proba)
     qwk = cohen_kappa_score(test_original, test_estimation, weights='quadratic')
     ampca=AMPCA(proba, y_test)
-    gmpca = 0
-    #gmpca=GMPCA(proba, y_test)
+    #gmpca = 0
+    gmpca=GMPCA(proba, y_test)
 
     # Print results
-    if print==True:
+    if print_results:
 
         print('\nClassification report')
         target_names = ['No injury', 'Possible injury', 'Non-incapacitating (minor) injury', 'incapacitating (major) injury', 'fatal injury']
         print(classification_report(test_original, test_estimation, target_names=target_names))
 
         print('\nConfusion matrix')
-        print(confusion_matrix(test_original, test_estimation))
+        print(confusion_matrix(test_original, test_estimation, labels=list(range(5))))
 
+        print('Total number of samples: ', len(test_original))
+        print('Predicted number of samples: ', len(test_estimation))
         
         print(f'\nTrain accuracy: {train_acc}')
         print(f'\nTest accuracy: {acc}')

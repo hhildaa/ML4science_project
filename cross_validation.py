@@ -13,7 +13,7 @@ def build_k_indices(y, k_fold):
 
 
 
-def k_fold_cross_validation(y, X, k_fold, model, loss_func, optimizer, num_epoch):
+def k_fold_cross_validation(y, X, k_fold, loss_func, learning_rate, num_epoch, model_hidden_size):
 
     X = X.to_numpy()
     y = y.to_numpy()
@@ -22,40 +22,38 @@ def k_fold_cross_validation(y, X, k_fold, model, loss_func, optimizer, num_epoch
     k_indices = build_k_indices(y, k_fold)
 
     # define lists to store the accuracies of training data and test data
-    accs_train = []
-    accs_test = []
+    cur_acc_train = []
+    cur_acc_test = []
+    dcas = []
+    ampcas = []
+    gmpcas = []
+    qwks = []
 
-    for i in range(1): # here should be some parameter
+    k_num = 0
 
-        cur_acc_train = np.zeros(k_fold)
-        cur_acc_test = np.zeros(k_fold)
-        
-        cur_pred = np.zeros(k_fold)
+    for k in range(k_fold):
+        model = FeedForward(model_hidden_size, params.PMF_LAYER, params.PMF_TYPE)
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        k_num = k_num+1
 
-        k_num = 0
+        print(f'\nCROSS-VALIDATION: {k_num}. FOLD\n')
 
-        for k in range(k_fold):
-            k_num = k_num+1
+        X_test = torch.tensor(X[k_indices[k]])
+        y_test = torch.tensor(y[k_indices[k]])
+        X_train = torch.tensor(np.vstack([X[k_indices[i]] for i in range(k_indices.shape[0]) if not i == k]))
+        y_train = torch.tensor(np.hstack([y[k_indices[i]] for i in range(k_indices.shape[0]) if not i == k]))
 
-            print(f'\nCROSS-VALIDATION: {k_num}. FOLD\n')
+        model, _ = train(X_train.numpy(), y_train.numpy(), model, loss_func, optimizer, num_epoch)
 
-            X_test = torch.tensor(X[k_indices[k]])
-            y_test = torch.tensor(y[k_indices[k]])
-            X_train = torch.tensor(np.vstack([X[k_indices[i]] for i in range(k_indices.shape[0]) if not i == k]))
-            y_train = torch.tensor(np.hstack([y[k_indices[i]] for i in range(k_indices.shape[0]) if not i == k]))
+        test_estimation, train_acc, acc, dca, ampca, gmpca, qwk = test(model, X_train, y_train, X_test, y_test, False)
 
-            model, _ = train(X_train.numpy(), y_train.numpy(), model, loss_func, optimizer, num_epoch)
-
-            test_estimation, train_acc, acc, dca, ampca, gmpca, qwk = test(model, X_train, y_train, X_test, y_test, False)
-
-            cur_acc_train[k] = train_acc
-            cur_acc_test[k] = acc
-
-        accs_train.append(cur_acc_train.mean())
-        accs_test.append(cur_acc_test.mean())
-
-    best_accuracy = np.max(accs_test)
+        cur_acc_train.append(train_acc)
+        cur_acc_test.append(acc)
+        dcas.append(dca)
+        ampcas.append(ampca)
+        gmpcas.append(gmpca)
+        qwks.append(qwk)
 
     # todo find best prediction and best parameters
    
-    return best_accuracy
+    return cur_acc_test, dcas, ampcas, gmpcas, qwks
