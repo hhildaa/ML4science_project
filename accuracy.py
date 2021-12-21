@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, cohen_kappa_score
+import params
+from model import prediction2label
 
 # Definitions for AMPCA and GMPCA
 
@@ -38,8 +40,12 @@ def test(model, X_train, y_train, X_test, y_test, print_results=False):
     # Convert to numpy
     train_estimation_dist = np.argmax(train_result.detach().numpy(), axis=1)
     test_estimation_dist = np.argmax(test_result.detach().numpy(), axis=1)
-    train_estimation = np.argmax(train_result.detach().numpy(), axis=1)
-    test_estimation = np.argmax(test_result.detach().numpy(), axis=1)
+    if params.ORDINAL_LOSS:
+        train_estimation = prediction2label(train_result.detach().numpy())
+        test_estimation = prediction2label(test_result.detach().numpy())
+    else:
+        train_estimation = np.argmax(train_result.detach().numpy(), axis=1)
+        test_estimation = np.argmax(test_result.detach().numpy(), axis=1)
     train_original = y_train.numpy()
     test_original = y_test.numpy()
 
@@ -48,12 +54,16 @@ def test(model, X_train, y_train, X_test, y_test, print_results=False):
     acc = accuracy_score(test_estimation, test_original)
 
     dca = sum(test_estimation == test_original) / len(test_original)
-    proba = test_result.detach().numpy()
-    print(proba)
     qwk = cohen_kappa_score(test_original, test_estimation, weights='quadratic')
-    ampca=AMPCA(proba, y_test)
-    #gmpca = 0
-    gmpca=GMPCA(proba, y_test)
+    if not params.ORDINAL_LOSS:
+        proba = test_result.detach().numpy()
+        print(proba)
+        ampca=AMPCA(proba, y_test)
+        #gmpca = 0
+        gmpca=GMPCA(proba, y_test)
+    else:
+        ampca = 0
+        gmpca = 0
 
     # Print results
     if print_results:
@@ -74,11 +84,13 @@ def test(model, X_train, y_train, X_test, y_test, print_results=False):
         ## Discrete Classification Accuracy (DCA)
         print("DCA: {dca:.4f}".format(dca=dca))
 
-        ## Arithmetic Mean Probability of Correct Assignment (AMPCA)
-        print("AMPCA: {ampca:.4f}".format(ampca=ampca))
+        if not params.ORDINAL_LOSS:
+            # These measures make no sense for ordinal loss, as it's not a probability distribution over labels
+            ## Arithmetic Mean Probability of Correct Assignment (AMPCA)
+            print("AMPCA: {ampca:.4f}".format(ampca=ampca))
 
-        ## Geometric Mean Probability of Correct Assignment (GMPCA)
-        print("GMPCA: {gmpca:.4f}".format(gmpca=gmpca))
+            ## Geometric Mean Probability of Correct Assignment (GMPCA)
+            print("GMPCA: {gmpca:.4f}".format(gmpca=gmpca))
 
         # Quadratic Weighted Kappa (QWK)
         print("QWK: {qwk:.4f}".format(qwk=qwk))

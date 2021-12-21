@@ -40,6 +40,27 @@ def labels_to_one_hot(labels):
 
     return one_hot_labels
 
+def prediction2label(pred):
+    """Convert ordinal predictions to class labels, e.g.
+    
+    [0.9, 0.1, 0.1, 0.1] -> 0
+    [0.9, 0.9, 0.1, 0.1] -> 1
+    [0.9, 0.9, 0.9, 0.1] -> 2
+    etc.
+
+    Source: https://towardsdatascience.com/how-to-perform-ordinal-regression-classification-in-pytorch-361a2a095a99
+    """
+    return (pred > 0.5).cumprod(axis=1).sum(axis=1) - 1
+
+def label2prediction(labels):
+    ordinal_labels = np.zeros((labels.size, labels.max() + 1))
+    for i in range(len(labels)):
+        label = labels[i]
+        ordinal_labels[i, :(label+1)] = 1
+
+    return ordinal_labels
+
+
 def train(features, labels, model, lossfunc, optimizer, num_epoch):
     """train a model for num_epoch epochs on the given data
     
@@ -57,7 +78,9 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
     """
     # Step 1 - create torch variables corresponding to features and labels
     features = torch.from_numpy(features).float()
-    if isinstance(lossfunc,nn.CrossEntropyLoss):
+    if params.ORDINAL_LOSS:
+        labels = torch.from_numpy(label2prediction(labels)).float()
+    elif isinstance(lossfunc,nn.CrossEntropyLoss):
         # cross entropy loss takes class labels instead of one-hot as target labels
         labels = torch.from_numpy(labels)
     else:
@@ -76,7 +99,9 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
         optimizer.step()
         
         # Calculate accuracy
-        if isinstance(lossfunc,nn.CrossEntropyLoss):
+        if params.ORDINAL_LOSS:
+            acc = accuracy_score(prediction2label(y_pred.detach().numpy()), prediction2label(labels.detach().numpy()))
+        elif isinstance(lossfunc,nn.CrossEntropyLoss):
             # cross entropy loss takes class labels instead of one-hot as target labels
             acc = accuracy_score(np.argmax(y_pred.detach().numpy(), axis=1), labels.detach().numpy())
         else:
@@ -95,10 +120,8 @@ class PMFLayer(nn.Module):
         self.pmf = pmf
         if pmf == 'Poisson':
             self.log_index_faculty = torch.FloatTensor([log(factorial(i)) for i in range(1, K+1)])
-        elif pmf == 'Bernoulli':
-            pass
         else:
-            raise ValueError('PMFLayer got invalid pmf: {} (expected one of "Poisson", "Bernoulli")'.format(pmf))
+            raise ValueError('PMFLayer got invalid pmf: {} (expected one of "Poisson")'.format(pmf))
 
     def forward(self, x):
         y = torch.cat([x for _ in range(self.K)], 1) # copy layer
@@ -129,7 +152,11 @@ class FeedForward(nn.Module):
         if self.pmf_layer:
             y = F.softplus(y)
             y = self.pmf(y)
-        else:
+            y = F.softmax(y, dim=1)
+        #else:
+        #    y = torch.sigmoid(y)
+        elif params.ORDINAL_LOSS:
             y = torch.sigmoid(y)
-        y = F.softmax(y, dim=1)
+        else:
+            y = F.softmax(y, dim=1)
         return y

@@ -83,14 +83,20 @@ if params.MODEL_TYPE == 'FeedForward':
     loss_func_mae = nn.L1Loss()
     loss_func_cross_entropy = nn.CrossEntropyLoss(weight=torch.FloatTensor([1,1,1,1,1]))
 
+    if params.ORDINAL_LOSS:
+        loss_func = lambda x, y: nn.MSELoss(reduction='none')(x, y).sum(axis=1).mean(axis=0)
+    else:
+        loss_func = loss_func_mse
+
     #model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
 
     if params.CROSS_VALIDATION:
-        accuracies, dcas, ampcas, gmpcas, qwks = k_fold_cross_validation(y_train, X_train, params.K_FOLDS, loss_func_mse, params.LEARNING_RATE, params.NUM_EPOCHS, params.HIDDEN_SIZE)
+        accuracies, dcas, ampcas, gmpcas, qwks = k_fold_cross_validation(y_train, X_train, params.K_FOLDS, loss_func, params.LEARNING_RATE, params.NUM_EPOCHS, params.HIDDEN_SIZE)
 
     model = FeedForward(params.HIDDEN_SIZE, params.PMF_LAYER, params.PMF_TYPE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=params.LEARNING_RATE)
-    model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func_cross_entropy, optimizer, params.NUM_EPOCHS)
+    # optimizer = torch.optim.SGD(model.parameters(), lr=params.LEARNING_RATE, weight_decay=params.REGULARIZATION)
+    optimizer = torch.optim.Adam(model.parameters(), lr=params.LEARNING_RATE, weight_decay=params.REGULARIZATION)
+    model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func, optimizer, params.NUM_EPOCHS)
     test_estimation, train_acc, acc, dca, ampca, gmpca, qwk = test(model, torch.from_numpy(X_train.to_numpy()), torch.from_numpy(y_train.to_numpy()), torch.from_numpy(X_test.to_numpy()), torch.from_numpy(y_test.to_numpy()), True)
 
     print('========================================================')
