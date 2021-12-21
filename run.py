@@ -51,7 +51,6 @@ if params.UPSAMPLING:
         else:
             categorical_features = range(2,34)
             smote_nc = SMOTENC(categorical_features=categorical_features, random_state=100)
-            smote_nc = SMOTENC(random_state=100)
             X_train, y_train = smote_nc.fit_resample(X_train, y_train)
     elif params.UPSAMPLING_TYPE == "random":
         class_values = list(train_df['severity'].unique())
