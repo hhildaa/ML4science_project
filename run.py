@@ -11,7 +11,7 @@ from sklearn.svm import SVC
 import numpy as np
 from accuracy import *
 from cross_validation import *
-#from imblearn.over_sampling import SMOTENC
+#from imblearn.over_sampling import SMOTEN, SMOTENC
 
 ######################################################################################################################
 
@@ -45,10 +45,13 @@ print(test_df.shape)
 if params.UPSAMPLING:
     if params.UPSAMPLING_TYPE == "SMOTE":
         X_train, y_train = train_df.drop(columns=['severity']), train_df['severity']
-
-        categorical_features = range(2,34)
-        smote_nc = SMOTENC(categorical_features=categorical_features, random_state=100)
-        X_train, y_train = smote_nc.fit_resample(X_train, y_train)
+        if params.BIN_AGES:
+            smote_n = SMOTEN(random_state=100)
+            X_train, y_train = smote_n.fit_resample(X_train, y_train)
+        else:
+            categorical_features = range(2,34)
+            smote_nc = SMOTENC(categorical_features=categorical_features, random_state=100)
+            X_train, y_train = smote_nc.fit_resample(X_train, y_train)
     elif params.UPSAMPLING_TYPE == "random":
         class_values = list(train_df['severity'].unique())
         class_lens = [train_df[train_df['severity'] == class_val].shape[0] for class_val in class_values]
