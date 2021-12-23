@@ -96,7 +96,8 @@ if params.MODEL_TYPE == 'FeedForward':
     model, train_loss = train(X_train.to_numpy(), y_train.to_numpy(), model, loss_func, optimizer, params.NUM_EPOCHS)
     test_estimation, train_acc, acc, dca, ampca, gmpca, qwk = test(model, torch.from_numpy(X_train.to_numpy()), torch.from_numpy(y_train.to_numpy()), torch.from_numpy(X_test.to_numpy()), torch.from_numpy(y_test.to_numpy()), True)
 
-    torch.save(model, 'models/model.pt')
+    if params.SAVE_MODEL:
+        torch.save(model, params.SAVE_PATH)
 
     print('========================================================')
     if params.CROSS_VALIDATION:
