@@ -8,6 +8,9 @@ from model import prediction2label
 # Definitions for AMPCA and GMPCA
 
 def AMPCA(proba, y):
+    """
+    returns Arithmetic Mean Probability of Correct Assignment (AMPCA)
+    """
     sum = 0
     i = 0
     for sel_mode in y:
@@ -27,10 +30,17 @@ def CEL(proba, y):
     return -sum/N
 
 def GMPCA(proba, y):
+    """
+    returns Geometric Mean Probability of Correct Assignment (AMPCA)
+    """
     return np.exp(-CEL(proba, y))
 
 def test(model, X_train, y_train, X_test, y_test, print_results=False):
-
+    """
+    test model on X_test and y_test
+    returns prediction of X_test, training accuracy, test accuracy, 
+    AMPCA, GMPCA, and QWK.
+    """
     # Testing on test data
     train_result = model.forward(torch.from_numpy(X_train.numpy()).float())
     test_result = model.forward(torch.from_numpy(X_test.numpy()).float())

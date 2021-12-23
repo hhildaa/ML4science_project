@@ -1,4 +1,5 @@
-
+import torch
+import torch.nn as nn
 ### RANDOM SEED
 SEED = 100
 
@@ -31,20 +32,13 @@ PMF_LAYER = False
 PMF_TYPE = 'Poisson' # One of 'Poisson', 'Bernoulli'
 
 ## TRAINING HYPERPARAMS
-LEARNING_RATE = 1e-3
-NUM_EPOCHS = 250
+LEARNING_RATE = 5e-3
+NUM_EPOCHS = 150
+REGULARIZATION = 0 # 0 == no regularization
 
-GRID_SEARCH_PARAMS = {
-    'hidden_sizes': [50, 300, 500],
-    'learning_rates': [1e-4, 5e-4, 1e-3, 5e-3, 1e-2],
-    'epochs': [50, 250, 500]
-}
+ORDINAL_LOSS = False
 
-# baseline feedforward:
-# current best test acc: 0.77
-# params: 300, 5e-3, 250(?)
-
-# preprocessed data:
-# current best test acc: 0.78
-# params: 300, 5e-4, 250(?)
-# give weight 2 to 0 and 1 class
+loss_func_mse = nn.MSELoss()
+loss_func_mae = nn.L1Loss()
+loss_func_cross_entropy = nn.CrossEntropyLoss(weight=torch.FloatTensor([1,1,1,1,1]))
+LOSS_FUNC = loss_func_mse

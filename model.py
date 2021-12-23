@@ -53,6 +53,13 @@ def prediction2label(pred):
     return (pred > 0.5).cumprod(axis=1).sum(axis=1) - 1
 
 def label2prediction(labels):
+    """Convert class labels to ordinal predictions, e.g.
+    
+    0 -> [1, 0, 0, 0]
+    1 -> [1, 1, 0, 0]
+    2 -> [1, 1, 1, 0]
+    etc.
+    """
     ordinal_labels = np.zeros((labels.size, labels.max() + 1))
     for i in range(len(labels)):
         label = labels[i]
@@ -110,7 +117,7 @@ def train(features, labels, model, lossfunc, optimizer, num_epoch):
         if epoch % 10 == 0:
             print ('Epoch [%d/%d], Accuracy:%.4f, Loss: %.4f' %(epoch+1, num_epoch, acc, curr_loss))
     
-    return model, loss.item()
+    return model, curr_loss
 
 class PMFLayer(nn.Module):
     def __init__(self, pmf='Poisson', K=5):
