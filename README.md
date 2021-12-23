@@ -6,6 +6,7 @@ Numpy 1.19.2
 Pandas 1.3.4
 Sklearn 1.0.1
 Pytorch 1.7.1
+imbalanced-learn 0.8.1
 
 ## Get started
 
